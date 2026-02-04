@@ -2,6 +2,7 @@
 
 import { useCallback, useId, useRef, useState } from "react";
 import Link from "next/link";
+import { AppNav } from "@/components/app-nav";
 import {
   isAllowedFile,
   getRejectMessage,
@@ -92,17 +93,7 @@ export default function UploadPage() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <nav className="border-b px-4 py-3 flex items-center gap-4">
-        <Link href="/" className="font-medium text-foreground hover:underline">
-          RAG
-        </Link>
-        <Link href="/upload" className="text-muted-foreground hover:text-foreground">
-          Upload
-        </Link>
-        <Link href="/query" className="text-muted-foreground hover:text-foreground">
-          Query
-        </Link>
-      </nav>
+      <AppNav />
 
       <main className="flex-1 max-w-2xl mx-auto w-full p-6 space-y-6">
         <h1 className="text-2xl font-semibold">Upload documents</h1>

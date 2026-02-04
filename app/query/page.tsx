@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from "react";
 import Link from "next/link";
+import { AppNav } from "@/components/app-nav";
 import { query as queryApi, type Citation } from "@/lib/api";
 import { useUploadedFiles } from "@/lib/uploaded-files-context";
 import { Button } from "@/components/ui/button";
@@ -52,17 +53,7 @@ export default function QueryPage() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <nav className="border-b px-4 py-3 flex items-center gap-4">
-        <Link href="/" className="font-medium text-foreground hover:underline">
-          RAG
-        </Link>
-        <Link href="/upload" className="text-muted-foreground hover:text-foreground">
-          Upload
-        </Link>
-        <Link href="/query" className="text-muted-foreground hover:text-foreground">
-          Query
-        </Link>
-      </nav>
+      <AppNav />
 
       <main className="flex-1 max-w-2xl mx-auto w-full p-6 space-y-6">
         <h1 className="text-2xl font-semibold">Ask a question</h1>

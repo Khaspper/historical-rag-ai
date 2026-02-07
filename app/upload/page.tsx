@@ -1,7 +1,6 @@
 "use client";
 
-import { useCallback, useId, useRef, useState } from "react";
-import Link from "next/link";
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { AppNav } from "@/components/app-nav";
 import {
   isAllowedFile,
@@ -10,9 +9,12 @@ import {
   type UploadedFile,
 } from "@/lib/api";
 import { useUploadedFiles } from "@/lib/uploaded-files-context";
+import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+
+type StorageFile = { name: string; id: string; metadata?: Record<string, unknown> };
 
 function formatSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
@@ -21,11 +23,32 @@ function formatSize(bytes: number): string {
 }
 
 export default function UploadPage() {
-  const { files, addFile, updateFile, removeFile } = useUploadedFiles();
+  const { addFile, updateFile } = useUploadedFiles();
   const [dragActive, setDragActive] = useState(false);
   const [rejectError, setRejectError] = useState<string | null>(null);
+  const [userFiles, setUserFiles] = useState<StorageFile[]>([]);
+  const [userId, setUserId] = useState<string | null>(null);
   const inputId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
+  const supabase = useMemo(() => createClient(), []);
+
+  const loadUserFiles = useCallback(async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      setUserId(null);
+      setUserFiles([]);
+      return;
+    }
+    setUserId(user.id);
+    const { data } = await supabase.storage.from("documents").list(user.id);
+    if (data) {
+      setUserFiles(data as StorageFile[]);
+    }
+  }, [supabase]);
+
+  useEffect(() => {
+    loadUserFiles();
+  }, [loadUserFiles]);
 
   const processFiles = useCallback(
     async (fileList: FileList | null) => {
@@ -55,12 +78,15 @@ export default function UploadPage() {
       }
       toAdd.forEach(addFile);
       for (const f of toAdd) {
-        const file = Array.from(fileList).find((x) => x.name === f.name && x.size === f.size);
+        const file = Array.from(fileList).find(
+          (x) => x.name === f.name && x.size === f.size
+        );
         if (!file) continue;
         updateFile(f.id, { status: "uploading" });
         try {
           const { id } = await uploadFile(file);
           updateFile(f.id, { status: "success", id });
+          await loadUserFiles();
         } catch (err) {
           updateFile(f.id, {
             status: "error",
@@ -69,7 +95,7 @@ export default function UploadPage() {
         }
       }
     },
-    [addFile, updateFile]
+    [addFile, updateFile, loadUserFiles]
   );
 
   const onDrop = useCallback(
@@ -107,7 +133,9 @@ export default function UploadPage() {
           onDragLeave={onDragLeave}
           className={cn(
             "border-2 border-dashed rounded-lg p-8 text-center transition-colors",
-            dragActive ? "border-primary bg-muted/50" : "border-muted-foreground/25"
+            dragActive
+              ? "border-primary bg-muted/50"
+              : "border-muted-foreground/25"
           )}
         >
           <input
@@ -120,6 +148,7 @@ export default function UploadPage() {
             onChange={(e) => {
               processFiles(e.target.files);
               e.target.value = "";
+              console.log("Hello");
             }}
           />
           <p className="text-muted-foreground mb-2">
@@ -140,14 +169,14 @@ export default function UploadPage() {
           </div>
         )}
 
-        {files.length > 0 && (
+        {userFiles.length > 0 && (
           <Card>
             <CardHeader>
               <CardTitle className="text-base">Uploaded files</CardTitle>
             </CardHeader>
             <CardContent>
               <ul className="space-y-2">
-                {files.map((f) => (
+                {userFiles.map((f) => (
                   <li
                     key={f.id}
                     className="flex items-center justify-between gap-2 py-2 border-b border-border last:border-0"
@@ -155,24 +184,10 @@ export default function UploadPage() {
                     <div className="min-w-0 flex-1">
                       <p className="font-medium truncate">{f.name}</p>
                       <p className="text-xs text-muted-foreground">
-                        {f.type} · {formatSize(f.size)} ·{" "}
-                        <span
-                          className={
-                            f.status === "success"
-                              ? "text-green-600"
-                              : f.status === "error"
-                                ? "text-destructive"
-                                : ""
-                          }
-                        >
-                          {f.status === "uploading"
-                            ? "Uploading…"
-                            : f.status === "success"
-                              ? "Uploaded"
-                              : f.status === "error"
-                                ? f.error ?? "Error"
-                                : "Pending"}
-                        </span>
+                        {(f.metadata?.mimetype as string) ?? (f.metadata?.contentType as string) ?? "—"} ·{" "}
+                        {typeof f.metadata?.size === "number"
+                          ? formatSize(f.metadata.size)
+                          : "—"}
                       </p>
                     </div>
                     <Button
@@ -180,7 +195,13 @@ export default function UploadPage() {
                       variant="ghost"
                       size="sm"
                       className="shrink-0 text-muted-foreground hover:text-destructive"
-                      onClick={() => removeFile(f.id)}
+                      onClick={async () => {
+                        if (!userId) return;
+                        await supabase.storage
+                          .from("documents")
+                          .remove([`${userId}/${f.name}`]);
+                        loadUserFiles();
+                      }}
                     >
                       Remove
                     </Button>

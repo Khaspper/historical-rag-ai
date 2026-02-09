@@ -73,21 +73,21 @@ export async function query(
     const text = await res.text();
     throw new Error(text || `Query failed: ${res.status}`);
   }
-  const contentType = res.headers.get("content-type") || "";
-  if (contentType.includes("text/event-stream") || contentType.includes("stream")) {
-    const reader = res.body?.getReader();
-    if (!reader) throw new Error("No response body");
-    const decoder = new TextDecoder();
-    let full = "";
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      const chunk = decoder.decode(value, { stream: true });
-      full += chunk;
-      onChunk?.(chunk);
-    }
-    return { answer: full, citations: [] };
-  }
+  // const contentType = res.headers.get("content-type") || "";
+  // if (contentType.includes("text/event-stream") || contentType.includes("stream")) {
+  //   const reader = res.body?.getReader();
+  //   if (!reader) throw new Error("No response body");
+  //   const decoder = new TextDecoder();
+  //   let full = "";
+  //   while (true) {
+  //     const { done, value } = await reader.read();
+  //     if (done) break;
+  //     const chunk = decoder.decode(value, { stream: true });
+  //     full += chunk;
+  //     onChunk?.(chunk);
+  //   }
+  //   return { answer: full, citations: [] };
+  // }
   return res.json();
 }
 

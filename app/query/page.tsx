@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import Link from "next/link";
 import { AppNav } from "@/components/app-nav";
 import { query as queryApi, type Citation } from "@/lib/api";
 import { useUploadedFiles } from "@/lib/uploaded-files-context";
@@ -65,7 +64,7 @@ export default function QueryPage() {
 
         <form onSubmit={handleSubmit} className="space-y-3">
           <Input
-            placeholder="Enter your question…"
+            placeholder="Enter your question..."
             value={question}
             onChange={(e) => setQuestion(e.target.value)}
             disabled={disabled}

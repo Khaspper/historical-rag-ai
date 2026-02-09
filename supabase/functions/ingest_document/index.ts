@@ -11,8 +11,8 @@ type Chunk = {
   content: string,
   embedding?: number[],
   chunkIndex: number,
+  title: string,
   tokenSize?: number,
-  title?: string,
 }
 
 let chunkIndex = 1;
@@ -122,9 +122,10 @@ serve(async (req: Request) => {
     const insertRows = chunks.map((chunk) => ({
       user_id: userId,
       source: chunk.source,
+      title: chunk.title,
       content: chunk.content,
       embedding: chunk.embedding,
-      chunk_index: chunk.chunkIndex,
+      chunk_index: chunk.chunkIndex
     }));
 
     for (let i = 0; i < insertRows.length; i += ROWS_PER_INSERT) {
@@ -202,9 +203,9 @@ async function generateEmbeddings(text: string) {
 
 function cleanMarkdown(md: string): string {
   return md
-    .replace(/\r\n/g, "\n")        // normalize line endings
-    .replace(/[ \t]+/g, " ")       // collapse multiple spaces
-    .replace(/\n{3,}/g, "\n\n")    // max 2 line breaks
+    .replace(/\r\n/g, "\n")
+    .replace(/[ \t]+/g, " ")
+    .replace(/\n{3,}/g, "\n\n")
     .replace(/\uFFFD/g, "")
     .replace(/^\s*\* \[.*?\]\(.*?\)$/gm, "")
     .replace(/(©.*$|All rights reserved.*$)/gmi, "")

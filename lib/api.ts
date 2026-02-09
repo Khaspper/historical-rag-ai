@@ -52,6 +52,7 @@ export async function uploadFile(file: File): Promise<{ id: string }> {
     body: form,
   });
   if (!res.ok) {
+    console.log('failed');
     const text = await res.text();
     throw new Error(text || `Upload failed: ${res.status}`);
   }

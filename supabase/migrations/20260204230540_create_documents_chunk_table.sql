@@ -15,7 +15,7 @@ CREATE TABLE if NOT EXISTS document_chunks (
   updated_at TIMESTAMPTZ DEFAULT NULL
 );
 
-CREATE INDEX IF NOT EXISTS document_chunks_embedding_idx ON document_chunks (user_id) INCLUDE (embedding);
+CREATE INDEX IF NOT EXISTS document_chunks_embedding_idx ON document_chunks (user_id);
 
 -- Vector Index
 CREATE INDEX IF NOT EXISTS vector_hnsw_idx ON document_chunks

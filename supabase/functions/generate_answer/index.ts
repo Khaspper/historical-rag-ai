@@ -112,10 +112,6 @@ serve(async (req: Request) => {
   });
 });
 
-/**
- * Calls Gemini streamGenerateContent and returns a ReadableStream of text chunks.
- * Uses top-level systemInstruction and contents (user only) per Gemini API.
- */
 async function streamAnswer(systemInstruction: string, userMessage: string): Promise<ReadableStream<Uint8Array> | null> {
   const apiKey = Deno.env.get("GEMINI_API_KEY");
   if (!apiKey) {

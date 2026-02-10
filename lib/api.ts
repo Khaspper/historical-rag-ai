@@ -59,10 +59,10 @@ export async function uploadFile(file: File): Promise<{ id: string }> {
   return res.json();
 }
 
-/** POST /api/query - JSON { query }. Stub returns mock streaming or static response. */
 export async function query(
   queryText: string,
-  onChunk?: (text: string) => void
+  onChunk?: (text: string) => void,
+  onCitations?: (citations: Citation[]) => void
 ): Promise<QueryResponse> {
   const res = await fetch("/api/query", {
     method: "POST",
@@ -73,21 +73,43 @@ export async function query(
     const text = await res.text();
     throw new Error(text || `Query failed: ${res.status}`);
   }
-  // const contentType = res.headers.get("content-type") || "";
-  // if (contentType.includes("text/event-stream") || contentType.includes("stream")) {
-  //   const reader = res.body?.getReader();
-  //   if (!reader) throw new Error("No response body");
-  //   const decoder = new TextDecoder();
-  //   let full = "";
-  //   while (true) {
-  //     const { done, value } = await reader.read();
-  //     if (done) break;
-  //     const chunk = decoder.decode(value, { stream: true });
-  //     full += chunk;
-  //     onChunk?.(chunk);
-  //   }
-  //   return { answer: full, citations: [] };
-  // }
+
+  const contentType = res.headers.get("content-type") ?? "";
+  const isStream =
+    contentType.includes("text/plain") ||
+    contentType.includes("text/event-stream") ||
+    res.headers.get("transfer-encoding") === "chunked";
+
+  if (isStream && res.body) {
+    let citations: Citation[] = [];
+    try {
+      const raw = res.headers.get("X-Citations");
+      if (raw) citations = JSON.parse(raw);
+    } catch {
+      // ignore
+    }
+    onCitations?.(citations);
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let full = "";
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) {
+          full += decoder.decode(); // flush any remaining bytes
+          break;
+        }
+        const chunk = decoder.decode(value, { stream: true });
+        full += chunk;
+        onChunk?.(chunk);
+      }
+    } finally {
+      reader.releaseLock();
+    }
+    return { answer: full, citations };
+  }
+
   return res.json();
 }
 

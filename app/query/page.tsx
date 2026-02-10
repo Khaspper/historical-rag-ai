@@ -26,10 +26,14 @@ export default function QueryPage() {
       setLoading(true);
       try {
         let streamedLength = 0;
-        const result = await queryApi(question.trim(), (chunk) => {
-          streamedLength += chunk.length;
-          setStreamingText((prev) => prev + chunk);
-        });
+        const result = await queryApi(
+          question.trim(),
+          (chunk) => {
+            streamedLength += chunk.length;
+            setStreamingText((prev) => prev + chunk);
+          },
+          (cits) => setCitations(cits ?? [])
+        );
         if (result.answer !== undefined && streamedLength === 0) {
           setStreamingText(result.answer);
         }
@@ -48,7 +52,8 @@ export default function QueryPage() {
     [question, loading]
   );
 
-  const disabled = !hasSuccessfulUpload || loading;
+  const canSubmit = Boolean(question.trim()) && hasSuccessfulUpload && !loading;
+
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -67,10 +72,10 @@ export default function QueryPage() {
             placeholder="Enter your question..."
             value={question}
             onChange={(e) => setQuestion(e.target.value)}
-            disabled={disabled}
+            disabled={!hasSuccessfulUpload || loading}
             className="min-h-10"
           />
-          <Button type="submit" disabled={disabled}>
+          <Button type="submit" disabled={!canSubmit}>
             {loading ? "Submitting…" : "Submit"}
           </Button>
         </form>

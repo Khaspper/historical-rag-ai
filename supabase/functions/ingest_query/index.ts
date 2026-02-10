@@ -80,11 +80,9 @@ serve(async (req: Request) => {
     return new Response(JSON.stringify({ searchDocsError }))
   }
 
-  console.log("matches: ", matches);
-
   // 3. Return response
   return new Response(
-    JSON.stringify('Success'),
+    JSON.stringify(matches),
     {
       headers: { "Content-Type": "application/json" },
       status: 200

@@ -1,9 +1,9 @@
 ALTER TABLE document_chunks
 ADD COLUMN IF NOT EXISTS title TEXT;
 
-DROP FUNCTION IF EXISTS public.search_docs(VECTOR, UUID, INT);
+DROP FUNCTION IF EXISTS public.search_docs(extensions.vector, UUID, INT);
 CREATE FUNCTION public.search_docs(
-  query_embedding VECTOR(768),
+  query_embedding extensions.vector(768),
   p_user_id UUID,
   match_count INT DEFAULT 5
 )
